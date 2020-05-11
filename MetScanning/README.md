@@ -2,14 +2,18 @@
 For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/MissingETScanners
 ## Install
 ```
-  cmsrel CMSSW_10_1_2_patch2
-  cd CMSSW_10_1_2_patch2/src
+  cmsrel CMSSW_XYZ
+  cd CMSSW_XYZ/src
   cmsenv
   git cms-init
-  git cms-addpkg RecoMET/METFilters 
+  git clone git@github.com:amkalsi/UpdatedFilters.git
   
-  git clone https://github.com/didukhle/MetScanning.git
+  mv  $CMSSW_BASE/src/UpdatedFilters/MetScanning  $CMSSW_BASE/src
+  
+  rm -rf $CMSSW_BASE/src/UpdatedFilters
+  
   scram b -j9
+  
   ```
   You might need to run the following command if you want to access files via XROOT:
 ```
