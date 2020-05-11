@@ -8,7 +8,7 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
   git cms-init
   git clone git@github.com:amkalsi/UpdatedFilters.git
   
-  mv  $CMSSW_BASE/src/UpdatedFilters/MetScanning  $CMSSW_BASE/src
+  mv  $CMSSW_BASE/src/UpdatedFilters/MetScanning  $CMSSW_BASE/src/
   
   rm -rf $CMSSW_BASE/src/UpdatedFilters
   
