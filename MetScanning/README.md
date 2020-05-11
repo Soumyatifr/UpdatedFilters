@@ -12,7 +12,15 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
   
   rm -rf $CMSSW_BASE/src/UpdatedFilters
   
+  git cms-addpkg RecoMET/METFilters
+  
+## to get new filters (under study) use 
+  
+  git cms-merge-topic amkalsi:Metfilters_understudy
+  
+
   scram b -j9
+  
   
   ```
   You might need to run the following command if you want to access files via XROOT:
@@ -23,16 +31,9 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
 ```
   cmsRun MetScanning/skim/python/skim.py
 ```
-## Run on AOD files:
-```
-  cmsRun MetScanning/skim/python/skimAOD.py
-```
-## Run with crab
-In ``MetScanning/skim/crab/`` edit crab.py and adjust samples, JSON, and the EOS directory. 
-Then do:
-```
-  cd MetScanning/skim/crab/
-  python crab.py
+
+
+
 ```
 In order to submit job with large input data:
 ```
