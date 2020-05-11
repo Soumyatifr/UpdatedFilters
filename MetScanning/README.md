@@ -2,6 +2,9 @@
 For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/MissingETScanners
 ## Install
 ```
+
+## USE CMSSW version compatible with samples you are using
+
   cmsrel CMSSW_XYZ
   cd CMSSW_XYZ/src
   cmsenv
@@ -28,8 +31,9 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
   voms-proxy-init --voms cms
 ```
 ## Run on local file:
+## Make sure you have input root file, global tag ( USE json file in CRAB onfiguration while generating ntuples for data)
 ```
-  cmsRun MetScanning/skim/python/skim.py
+  cmsRun MetScanning/skim/python/skimMINIAOD_BadRuns.py
 ```
 
 
