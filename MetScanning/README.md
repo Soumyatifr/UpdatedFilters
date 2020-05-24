@@ -36,7 +36,9 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
   
   
   
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   
+  ###For CMSSW_10_2
 
 ## USE CMSSW version compatible with samples you are using
 
