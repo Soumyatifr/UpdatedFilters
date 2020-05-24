@@ -38,14 +38,14 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
 
 git cms-merge-topic cms-egamma:EgammaPostRecoTools
 git cms-addpkg EgammaAnalysis/ElectronTools
-rm EgammaAnalysis/ElectronTools/data -rf
-git clone git@github.com:cms-data/EgammaAnalysis-ElectronTools.git EgammaAnalysis/ElectronTools/data
 
+scram b -j10
 
-  #now add in E/gamma Post reco tools
-git clone git@github.com:cms-egamma/EgammaPostRecoTools.git  EgammaUser/EgammaPostRecoTools
-cd  EgammaUser/EgammaPostRecoTools
-git checkout master
+For UL 2017 use following file
+
+  cmsRun MetScanning/skim/python/skimMINIAOD_UL2017.py
+
+## 
   
   ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   
