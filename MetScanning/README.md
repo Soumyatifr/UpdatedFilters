@@ -34,7 +34,7 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
   rm  BadParticleFilter.cc 
   wget https://raw.githubusercontent.com/amkalsi/cmssw/Metfilters_understudy/RecoMET/METFilters/plugins/BadParticleFilter.cc 
   
-
+cd $CMSSW_BASE/src/
 
 git cms-merge-topic cms-egamma:EgammaPostRecoTools
 git cms-addpkg EgammaAnalysis/ElectronTools
