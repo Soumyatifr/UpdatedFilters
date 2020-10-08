@@ -43,7 +43,7 @@ scram b -j10
 
 For UL 2017 use following file
 
-  cmsRun MetScanning/skim/python/skimMINIAOD_UL2017.py
+  cmsRun MetScanning/skim/test/skimMINIAOD_UL2017.py
 
 ## 
   
