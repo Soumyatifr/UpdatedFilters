@@ -3,11 +3,11 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
 ## Install
 ```
 
-## Steps for UL CMSSW_10_6_4_patch1 
+## Steps for UL CMSSW_10_6_17_patch1
 
 
-  cmsrel CMSSW_10_6_4_patch1
-  cd CMSSW_10_6_4_patch1/src
+  cmsrel CMSSW_10_6_17_patch1
+  cd CMSSW_10_6_17_patch1/src
   cmsenv
   git cms-init
   git clone git@github.com:amkalsi/UpdatedFilters.git
