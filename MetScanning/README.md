@@ -3,14 +3,14 @@ For recent instruction please visit: https://twiki.cern.ch/twiki/bin/view/CMS/Mi
 ## Install
 ```
 
-## Steps for UL CMSSW_10_6_17_patch1
+## Steps for UL CMSSW_10_6_19_patch3
 
 
-  cmsrel CMSSW_10_6_17_patch1
-  cd CMSSW_10_6_17_patch1/src
+  cmsrel CMSSW_10_6_19_patch3
+  cd CMSSW_10_6_19_patch3/src
   cmsenv
   git cms-init
-  git clone git@github.com:amkalsi/UpdatedFilters.git
+  git clone https://github.com/vhegde91/UpdatedFilters
   
   mv  $CMSSW_BASE/src/UpdatedFilters/MetScanning  $CMSSW_BASE/src/
   
@@ -44,35 +44,6 @@ scram b -j10
 For UL 2017 use following file
 
   cmsRun MetScanning/skim/test/skimMINIAOD_UL2017.py
-
-## 
-  
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  
-  ###For CMSSW_10_2
-
-## USE CMSSW version compatible with samples you are using
-
-  cmsrel CMSSW_XYZ
-  cd CMSSW_XYZ/src
-  cmsenv
-  git cms-init
-  git clone git@github.com:amkalsi/UpdatedFilters.git
-  
-  mv  $CMSSW_BASE/src/UpdatedFilters/MetScanning  $CMSSW_BASE/src/
-  
-  rm -rf $CMSSW_BASE/src/UpdatedFilters
-  
-  git cms-addpkg RecoMET/METFilters
-  
-## to get new filters (under study) use 
-  
-  git cms-merge-topic amkalsi:Metfilters_understudy
-  
-  
- 
-
-  scram b -j9
   
   
   ```
