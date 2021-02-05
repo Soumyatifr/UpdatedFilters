@@ -49,7 +49,7 @@
 #include <fstream>
 #include <iostream>
 
-const int  N_METFilters=18;
+const int  N_METFilters=19;
 enum METFilterIndex{
 	idx_Flag_goodVertices,
 	idx_Flag_globalTightHalo2016Filter,
@@ -63,6 +63,7 @@ enum METFilterIndex{
 	idx_Flag_ecalBadCalibFilter,
 	idx_Flag_ecalLaserCorrFilter,
 	idx_Flag_EcalDeadCellBoundaryEnergyFilter,
+	idx_Flag_hfNoisyHitsFilter,
 	idx_PassecalBadCalibFilter_Update,
 	idx_PassecalLaserCorrFilter_Update,
 	idx_PassEcalDeadCellBoundaryEnergyFilter_Update,
@@ -168,6 +169,7 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		bool Flag_ecalBadCalibFilter;
 		bool Flag_ecalLaserCorrFilter; 
 		bool Flag_EcalDeadCellBoundaryEnergyFilter;
+                bool Flag_hfNoisyHitsFilter;                
 
 		//Decision obtained rerunning the filters on top of MINIAOD
 		bool PassecalBadCalibFilter_Update;
@@ -220,9 +222,10 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		double _met_phi;
 		double _puppimet;
 		double _puppimet_phi;
-
-		int _number_jets_pt25_delphiMET;
+  
+                int _number_jets_pt25_delphiMET;
 		int _number_jets_pt25;
+                double _ht, _ht3To5, _ht5;
 		// string
 		std::ifstream badrunFile;
 		std::vector<BadRuns> BadRunsList;
@@ -437,6 +440,7 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 	Flag_ecalBadCalibFilter= GetMETFilterDecision(iEvent,METFilterResults,"Flag_ecalBadCalibFilter");
 	Flag_EcalDeadCellBoundaryEnergyFilter= GetMETFilterDecision(iEvent,METFilterResults,"Flag_EcalDeadCellBoundaryEnergyFilter");
 	Flag_ecalLaserCorrFilter= GetMETFilterDecision(iEvent,METFilterResults,"Flag_ecalLaserCorrFilter");
+	Flag_hfNoisyHitsFilter= GetMETFilterDecision(iEvent,METFilterResults,"Flag_hfNoisyHitsFilter");
 
 
 	//Now accessing the decisions of some filters that we reran on top of MINIAOD
@@ -644,11 +648,16 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 	double leadjetpt (0.);
 	int number_jets_pt25 = 0;
 	int number_jets_pt25_delphiMET = 0;
+	double ht = 0., ht5 = 0., ht3To5 = 0.;
 	for( std::vector<pat::Jet>::const_iterator jet = (*theJets).begin(); jet != (*theJets).end(); jet++ ) {
 
 		// save number of  jets with pt > 25 GeV
 		if((&*jet)->pt() > 25.) number_jets_pt25++;
 		if((&*jet)->pt() > 25. && fabs(deltaPhi((&*jet)->phi(),  pfmet->phi())) > 3.0) number_jets_pt25_delphiMET++;
+		// calculate HT using jets with Pt > 25
+		if((&*jet)->pt() > 25. && fabs((&*jet)->eta()) < 2.4) ht  = ht  + (&*jet)->pt();
+		if((&*jet)->pt() > 25. && fabs((&*jet)->eta()) < 5.0) ht5 = ht5 + (&*jet)->pt();
+		if((&*jet)->pt() > 25. && fabs((&*jet)->eta()) > 3.0 && fabs((&*jet)->eta()) < 5.0) ht3To5 = ht3To5 + (&*jet)->pt();
 
 		if((&*jet)->pt() >leadjetpt) leadjetpt = (&*jet)->pt();
 		if((&*jet)->pt()<200) continue;
@@ -677,6 +686,9 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 
 	_number_jets_pt25 = number_jets_pt25 ;
 	_number_jets_pt25_delphiMET = number_jets_pt25_delphiMET ;
+	_ht = ht;
+	_ht5 = ht5;
+	_ht3To5 = ht3To5;
 
 	//PUPPI MET
 	edm::Handle< vector<pat::MET> > ThePUPPIMET;
@@ -782,6 +794,7 @@ METScanningNtupleMakerMINIAOD::beginJob()
 	outputTree->Branch("Flag_ecalBadCalibFilter",&Flag_ecalBadCalibFilter,"Flag_ecalBadCalibFilter/O");
 	outputTree->Branch("Flag_ecalLaserCorrFilter",&Flag_ecalLaserCorrFilter,"Flag_ecalLaserCorrFilter/O");
 	outputTree->Branch("Flag_EcalDeadCellBoundaryEnergyFilter",&Flag_EcalDeadCellBoundaryEnergyFilter,"Flag_EcalDeadCellBoundaryEnergyFilter/O");
+	outputTree->Branch("Flag_hfNoisyHitsFilter",&Flag_hfNoisyHitsFilter,"Flag_hfNoisyHitsFilter/O");
 
 	outputTree->Branch("PassecalBadCalibFilter_Update",&PassecalBadCalibFilter_Update,"PassecalBadCalibFilter_Update/O");
 	outputTree->Branch("PassecalLaserCorrFilter_Update",&PassecalLaserCorrFilter_Update,"PassecalLaserCorrFilter_Update/O");
@@ -822,6 +835,9 @@ METScanningNtupleMakerMINIAOD::beginJob()
 
 	outputTree->Branch("_number_jets_pt25", &_number_jets_pt25);
 	outputTree->Branch("_number_jets_pt25_delphiMET", &_number_jets_pt25_delphiMET);
+	outputTree->Branch("_ht", &_ht);
+	outputTree->Branch("_ht5", &_ht5);
+	outputTree->Branch("_ht3To5", &_ht3To5);
 	outputTree->Branch("_elePt",      &_elePt);
 	outputTree->Branch("_eleEta",     &_eleEta);
 	outputTree->Branch("_elePhi",     &_elePhi);
@@ -971,6 +987,7 @@ bool METScanningNtupleMakerMINIAOD::GetIdxFilterDecision(int it){
 	else if(it==  idx_Flag_ecalBadCalibFilter)return   Flag_ecalBadCalibFilter;
 	else if(it==  idx_Flag_ecalLaserCorrFilter)return   Flag_ecalLaserCorrFilter;
 	else if(it==  idx_Flag_EcalDeadCellBoundaryEnergyFilter)return   Flag_EcalDeadCellBoundaryEnergyFilter;
+	else if(it==  idx_Flag_hfNoisyHitsFilter)return   Flag_hfNoisyHitsFilter;
 	else if(it==  idx_PassecalBadCalibFilter_Update)return   PassecalBadCalibFilter_Update;
 	else if(it==  idx_PassecalLaserCorrFilter_Update)return   PassecalLaserCorrFilter_Update;
 	else if(it==  idx_PassEcalDeadCellBoundaryEnergyFilter_Update)return   PassEcalDeadCellBoundaryEnergyFilter_Update;
@@ -994,6 +1011,7 @@ TString METScanningNtupleMakerMINIAOD::GetIdxFilterName(int it){
 	else if(it== idx_Flag_ecalBadCalibFilter)return "Flag_ecalBadCalibFilter";
 	else if(it== idx_Flag_ecalLaserCorrFilter)return "Flag_ecalLaserCorrFilter";
 	else if(it== idx_Flag_EcalDeadCellBoundaryEnergyFilter)return "Flag_EcalDeadCellBoundaryEnergyFilter";
+	else if(it== idx_Flag_hfNoisyHitsFilter)return "Flag_hfNoisyHitsFilter";
 	else if(it== idx_PassecalBadCalibFilter_Update)return "PassecalBadCalibFilter_Update";
 	else if(it== idx_PassecalLaserCorrFilter_Update)return "PassecalLaserCorrFilter_Update";
 	else if(it== idx_PassEcalDeadCellBoundaryEnergyFilter_Update )return "PassEcalDeadCellBoundaryEnergyFilter_Update";
@@ -1019,6 +1037,7 @@ void METScanningNtupleMakerMINIAOD::InitandClearStuff(){
 	Flag_ecalBadCalibFilter=false;
 	Flag_ecalLaserCorrFilter=false;
 	Flag_EcalDeadCellBoundaryEnergyFilter=false;
+	Flag_hfNoisyHitsFilter=false;
 	PassecalBadCalibFilter_Update=false;
 	PassecalLaserCorrFilter_Update=false;
 	PassEcalDeadCellBoundaryEnergyFilter_Update=false;

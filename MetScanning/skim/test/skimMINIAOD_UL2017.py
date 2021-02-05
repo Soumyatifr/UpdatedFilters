@@ -13,7 +13,7 @@ process.source = cms.Source("PoolSource",
 #'file:pickevents_DM_17Spet_BadMuon.root',
 #'file:pickevents_DM_PromptRecoD_BadMuon.root'
 #'file:/user/amkalsi/MetFilterStudy/ECALDead/CMSSW_10_2_13/src/MetScanning/skim/python/crab_projects_Data_v1/16963797-0937-E811-ABE2-008CFAE45134.root'
-        'file:/pnfs/iihe/cms/store/user/mmahdavi/JetHT/crab_pickEvents/200705_171759/0000/9_1.root'
+                                    'root://xrootd-cms.infn.it///store/data/Run2018A/JetHT/MINIAOD/UL2018_MiniAODv2-v1/260000/00B87525-94D1-C741-9B03-00528106D15A.root'
 #'file:RunD_ecalBadScfilter_JetHTD.root',
         )
                             )
@@ -21,7 +21,7 @@ process.source = cms.Source("PoolSource",
 process.TFileService = cms.Service("TFileService", fileName = cms.string("output.root") )
 
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-process.GlobalTag.globaltag="106X_dataRun2_v20"
+process.GlobalTag.globaltag="106X_dataRun2_v28"
 #process.GlobalTag.globaltag="102X_upgrade2018_realistic_v15"
 
 process.load("Configuration.StandardSequences.GeometryDB_cff")
@@ -137,7 +137,6 @@ process.BadPFMuonFilterUpdateDz=BadPFMuonFilter.clone(
     minDzBestTrack = cms.double(0.5),
     taggingMode    = cms.bool(True)
 )
-
 
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask
 patAlgosToolsTask = getPatAlgosToolsTask(process)
