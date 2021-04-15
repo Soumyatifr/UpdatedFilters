@@ -146,7 +146,7 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		TH1F *h_PFMet, *h_PuppiMet, *h_nvtx, *h_leadjetpt;
 		TH1F *h_PFMet_num[N_METFilters], *h_PuppiMet_num[N_METFilters], *h_nvtx_num[N_METFilters], *h_leadjetpt_num[N_METFilters];
 		TH2F *h_jet200etavsphi_fail[N_METFilters];
-                TH1F *h_tot_gen_weights;
+                TH1F *h_tot_gen_weights_1, *h_tot_gen_weights_2;
 		//The output TTree
 		TTree* outputTree;
 
@@ -327,16 +327,10 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		bool HLT_IsoMu27;
 
                 //MET Trigger
-                bool HLT_MET105_IsoTrk50;
-                bool HLT_MET120_IsoTrk50;
-                bool HLT_MET60_IsoTrk35;
-                bool HLT_MET75_IsoTrk50;
-                bool HLT_MET90_IsoTrk50;
-                bool HLT_MET200;
-                bool HLT_MET250;
-                bool HLT_MET300;
-                bool HLT_MET600;
-                bool HLT_MET700;
+                bool HLT_PFMET110_PFMHT110_IDTight;
+                bool HLT_PFMET120_PFMHT120_IDTight;
+                bool HLT_PFMET130_PFMHT130_IDTight;
+                bool HLT_PFMET140_PFMHT140_IDTight;
 };
 
 
@@ -375,7 +369,8 @@ METScanningNtupleMakerMINIAOD::METScanningNtupleMakerMINIAOD(const edm::Paramete
 {
 	//now do what ever initialization is needed
 	edm::Service<TFileService> fs; 
-        h_tot_gen_weights = fs->make<TH1F>("h_tot_gen_weights","Total generator weights", 200000, -1000.0, 1000.0);
+        h_tot_gen_weights_1 = fs->make<TH1F>("h_tot_gen_weights_1","Total generator weights", 200000, -1000.0, 1000.0);
+        h_tot_gen_weights_2 = fs->make<TH1F>("h_tot_gen_weights_2","Total generator weights alt. app.", 2, 0.0, 2.0);
 	h_nvtx  = fs->make<TH1F>("h_nvtx" , "Number of reco vertices (MET>200);N_{vtx};Events"  ,    100, 0., 100.);
 	h_PFMet  = fs->make<TH1F>("h_PFMet" , "Type 1 PFMET (GeV);Type 1 PFMET (GeV);Events"  ,    1000, 0., 5000.);
 	h_PuppiMet  = fs->make<TH1F>("h_PuppiMet" , "PUPPI MET (GeV);PUPPI MET (GeV);Events"  ,    1000, 0., 5000.);
@@ -440,12 +435,12 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
            edm::Handle<GenEventInfoProduct> genEvtInfo;
            iEvent.getByToken(genInfoToken_, genEvtInfo);
            _genWeight=genEvtInfo->weight();
-           h_tot_gen_weights->Fill(genEvtInfo->weight());
+           h_tot_gen_weights_1->Fill(genEvtInfo->weight()); h_tot_gen_weights_2->Fill(1.0,genEvtInfo->weight());
          }
         else 
          {
            _genWeight = 1.0;
-           h_tot_gen_weights->Fill(_genWeight);
+           h_tot_gen_weights_1->Fill(_genWeight); h_tot_gen_weights_2->Fill(1.0,_genWeight);
          }
 	//MET filters are stored in TriggerResults::RECO or TriggerResults::PAT . Should take the latter if it exists
 	edm::Handle<TriggerResults> METFilterResults;
@@ -532,16 +527,10 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 				if(TrigPath.Contains("HLT_IsoMu24_v")) HLT_IsoMu24=true;
 				if(TrigPath.Contains("HLT_IsoMu27_v")) HLT_IsoMu27=true;
                                 //MET Related Triggers
-                                if(TrigPath.Contains("HLT_MET200_v")) HLT_MET200=true;
-                                if(TrigPath.Contains("HLT_MET250_v")) HLT_MET250=true;
-                                if(TrigPath.Contains("HLT_MET300_v")) HLT_MET300=true;
-                                if(TrigPath.Contains("HLT_MET600_v")) HLT_MET600=true;
-                                if(TrigPath.Contains("HLT_MET700_v")) HLT_MET700=true;
-                                if(TrigPath.Contains("HLT_MET60_IsoTrk35_Loose_v")) HLT_MET60_IsoTrk35=true;
-                                if(TrigPath.Contains("HLT_MET75_IsoTrk50_v")) HLT_MET75_IsoTrk50=true;
-                                if(TrigPath.Contains("HLT_MET90_IsoTrk50_v")) HLT_MET90_IsoTrk50=true;
-                                if(TrigPath.Contains("HLT_MET105_IsoTrk50_v")) HLT_MET105_IsoTrk50=true;
-                                if(TrigPath.Contains("HLT_MET120_IsoTrk50_v")) HLT_MET120_IsoTrk50=true;
+                                if(TrigPath.Contains("HLT_PFMET110_PFMHT110_IDTight_v")) HLT_PFMET110_PFMHT110_IDTight=true;
+                                if(TrigPath.Contains("HLT_PFMET120_PFMHT120_IDTight_v")) HLT_PFMET120_PFMHT120_IDTight=true;
+                                if(TrigPath.Contains("HLT_PFMET130_PFMHT130_IDTight_v")) HLT_PFMET130_PFMHT130_IDTight=true;
+                                if(TrigPath.Contains("HLT_PFMET140_PFMHT140_IDTight_v")) HLT_PFMET140_PFMHT140_IDTight=true;
 			}
 		}
 	}
@@ -899,71 +888,71 @@ METScanningNtupleMakerMINIAOD::beginJob()
 	outputTree->Branch("_muonPhi", &_muonPhi);
 	outputTree->Branch("_muonEnergy", &_muonEnergy);
 	outputTree->Branch("_muonCharge", &_muonCharge);
-	outputTree->Branch("_muonInnerTrackPt", & _muonInnerTrackPt);
-	outputTree->Branch("_muonInnerTrackPtError", &_muonInnerTrackPtError);
-	outputTree->Branch("_muonBestTrackPt", & _muonBestTrackPt);
-	outputTree->Branch("_muonBestTrackPtError",&_muonBestTrackPtError);
-	outputTree->Branch("_muonInnerTrackCharge", &_muonInnerTrackCharge);
-	outputTree->Branch("_muonBestTrackCharge", & _muonBestTrackCharge);
+	//outputTree->Branch("_muonInnerTrackPt", & _muonInnerTrackPt);
+	//outputTree->Branch("_muonInnerTrackPtError", &_muonInnerTrackPtError);
+	//outputTree->Branch("_muonBestTrackPt", & _muonBestTrackPt);
+        //outputTree->Branch("_muonBestTrackPtError",&_muonBestTrackPtError);
+	//outputTree->Branch("_muonInnerTrackCharge", &_muonInnerTrackCharge);
+	//outputTree->Branch("_muonBestTrackCharge", & _muonBestTrackCharge);
 
-	outputTree->Branch("_muonGlobal", &_muonGlobal);
-	outputTree->Branch("_muonalgo", &_muonalgo);
-	outputTree->Branch("_muonsegComp", &_muonsegComp);
-	outputTree->Branch("_muonHighpurity", &_muonHighpurity);
+	//outputTree->Branch("_muonGlobal", &_muonGlobal);
+	//outputTree->Branch("_muonalgo", &_muonalgo);
+	//outputTree->Branch("_muonsegComp", &_muonsegComp);
+	//outputTree->Branch("_muonHighpurity", &_muonHighpurity);
 	outputTree->Branch("_muonPF", &_muonPF);
 	outputTree->Branch("_muonIsoSumDR04", &_muonIsoSumDR04);
-	outputTree->Branch("_muonGlobalTrackPt", & _muonGlobalTrackPt);
-	outputTree->Branch("_muonTPFMSTrackPt", & _muonTPFMSTrackPt);
-	outputTree->Branch("_muonPickyTrackPt", & _muonPickyTrackPt);
-	outputTree->Branch("_muonDYTTrackPt", & _muonDYTTrackPt);
-	outputTree->Branch("_muonTunePMuonBestTrackPt", & _muonTunePMuonBestTrackPt);
+	//outputTree->Branch("_muonGlobalTrackPt", & _muonGlobalTrackPt);
+	//outputTree->Branch("_muonTPFMSTrackPt", & _muonTPFMSTrackPt);
+	//outputTree->Branch("_muonPickyTrackPt", & _muonPickyTrackPt);
+	//outputTree->Branch("_muonDYTTrackPt", & _muonDYTTrackPt);
+	//outputTree->Branch("_muonTunePMuonBestTrackPt", & _muonTunePMuonBestTrackPt);
 
 
-	outputTree->Branch("_muonGlobalTrackPtError", & _muonGlobalTrackPtError);
-	outputTree->Branch("_muonTPFMSTrackPtError", & _muonTPFMSTrackPtError);
-	outputTree->Branch("_muonPickyTrackPtError", & _muonPickyTrackPtError);
-	outputTree->Branch("_muonDYTTrackPtError", & _muonDYTTrackPtError);
-	outputTree->Branch("_muonTunePMuonBestTrackPtError", & _muonTunePMuonBestTrackPtError);
+	//outputTree->Branch("_muonGlobalTrackPtError", & _muonGlobalTrackPtError);
+	//outputTree->Branch("_muonTPFMSTrackPtError", & _muonTPFMSTrackPtError);
+	//outputTree->Branch("_muonPickyTrackPtError", & _muonPickyTrackPtError);
+	//outputTree->Branch("_muonDYTTrackPtError", & _muonDYTTrackPtError);
+	//outputTree->Branch("_muonTunePMuonBestTrackPtError", & _muonTunePMuonBestTrackPtError);
 
-	outputTree->Branch("_muonGlobalTrackCharge", & _muonGlobalTrackCharge);
-	outputTree->Branch("_muonTPFMSTrackCharge", & _muonTPFMSTrackCharge);
-	outputTree->Branch("_muonPickyTrackCharge", & _muonPickyTrackCharge);
-	outputTree->Branch("_muonDYTTrackCharge", & _muonDYTTrackCharge);
-	outputTree->Branch("_muonTunePMuonBestTrackCharge", & _muonTunePMuonBestTrackCharge);
-	outputTree->Branch("_muonTrackIsoSumPt", &_muonTrackIsoSumPt);
-	outputTree->Branch("_muonValidPixelHits", &_muonValidPixelHits);
-	outputTree->Branch("_muonValidMuonHits", &_muonValidMuonHits);
-	outputTree->Branch("_muonTrackerLayersHits", &_muonTrackerLayersHits);
-	outputTree->Branch("_muonMatchedStations", &_muonMatchedStations);
+	//outputTree->Branch("_muonGlobalTrackCharge", & _muonGlobalTrackCharge);
+	//outputTree->Branch("_muonTPFMSTrackCharge", & _muonTPFMSTrackCharge);
+	//outputTree->Branch("_muonPickyTrackCharge", & _muonPickyTrackCharge);
+	//outputTree->Branch("_muonDYTTrackCharge", & _muonDYTTrackCharge);
+	//outputTree->Branch("_muonTunePMuonBestTrackCharge", & _muonTunePMuonBestTrackCharge);
+	//outputTree->Branch("_muonTrackIsoSumPt", &_muonTrackIsoSumPt);
+	//outputTree->Branch("_muonValidPixelHits", &_muonValidPixelHits);
+	//outputTree->Branch("_muonValidMuonHits", &_muonValidMuonHits);
+	//outputTree->Branch("_muonTrackerLayersHits", &_muonTrackerLayersHits);
+	//outputTree->Branch("_muonMatchedStations", &_muonMatchedStations);
 
 	outputTree->Branch("_muonDxy", &_muonDxy);
 	outputTree->Branch("_muonDz", &_muonDz);
-	outputTree->Branch("_muonInnerDxy", &_muonInnerDxy);
-	outputTree->Branch("_muonInnerDz", &_muonInnerDz);
+	//outputTree->Branch("_muonInnerDxy", &_muonInnerDxy);
+	//outputTree->Branch("_muonInnerDz", &_muonInnerDz);
 
-	outputTree->Branch("_muonHighPtTrackerId", &_muonHighPtTrackerId);
-	outputTree->Branch("_muonHighPtId", & _muonHighPtId);
+	//outputTree->Branch("_muonHighPtTrackerId", &_muonHighPtTrackerId);
+	//outputTree->Branch("_muonHighPtId", & _muonHighPtId);
 
 
 	outputTree->Branch("_muonLoose", &_muonLoose);
 	outputTree->Branch("_muonMedium", &_muonMedium);
 	outputTree->Branch("_muonTight",&_muonTight);
 	outputTree->Branch("_muonSoft",&_muonSoft);
-	outputTree->Branch("_muonTracker",&_muonTracker);
-	outputTree->Branch("_muonMatchedNStations",&_muonMatchedNStations);
-	outputTree->Branch("_muonStationMask",&_muonStationMask);
-	outputTree->Branch("_muonRPCLayers",&_muonRPCLayers);
-	outputTree->Branch("_muonBestValidMuonHits",&_muonBestValidMuonHits);
+	//outputTree->Branch("_muonTracker",&_muonTracker);
+	//outputTree->Branch("_muonMatchedNStations",&_muonMatchedNStations);
+	//outputTree->Branch("_muonStationMask",&_muonStationMask);
+	//outputTree->Branch("_muonRPCLayers",&_muonRPCLayers);
+	//outputTree->Branch("_muonBestValidMuonHits",&_muonBestValidMuonHits);
 
 
 
-	outputTree->Branch("_muonGlobTrackNChiS",&_muonGlobTrackNChiS);
-	outputTree->Branch("_muonCombQualityChiSLP", &_muonCombQualityChiSLP);
-	outputTree->Branch("_muonCombQualitytrkKink",&_muonCombQualitytrkKink);
-	outputTree->Branch("_muonInnerTrackVFrac",& _muonInnerTrackVFrac);
+	//outputTree->Branch("_muonGlobTrackNChiS",&_muonGlobTrackNChiS);
+	//outputTree->Branch("_muonCombQualityChiSLP", &_muonCombQualityChiSLP);
+	//outputTree->Branch("_muonCombQualitytrkKink",&_muonCombQualitytrkKink);
+	//outputTree->Branch("_muonInnerTrackVFrac",& _muonInnerTrackVFrac);
 
-	outputTree->Branch("_muonPixelLayers",&_muonPixelLayers);
-	outputTree->Branch("_muonGoodMuon", &_muonGoodMuon);
+	//outputTree->Branch("_muonPixelLayers",&_muonPixelLayers);
+	//outputTree->Branch("_muonGoodMuon", &_muonGoodMuon);
 
 	outputTree->Branch("HLT_PFHT1050",&HLT_PFHT1050,"HLT_PFHT1050/O");
 	outputTree->Branch("HLT_PFHT900",&HLT_PFHT900,"HLT_PFHT900/O");
@@ -978,16 +967,10 @@ METScanningNtupleMakerMINIAOD::beginJob()
 	outputTree->Branch("HLT_IsoMu24", &HLT_IsoMu24, "HLT_IsoMu24/O");
 	outputTree->Branch("HLT_IsoMu27", &HLT_IsoMu27, "HLT_IsoMu27/O");
 
-        outputTree->Branch("HLT_MET105_IsoTrk50", &HLT_MET105_IsoTrk50, "HLT_MET105_IsoTrk50/O");
-	outputTree->Branch("HLT_MET120_IsoTrk50", &HLT_MET120_IsoTrk50, "HLT_MET120_IsoTrk50/O");
-	outputTree->Branch("HLT_MET60_IsoTrk35", &HLT_MET60_IsoTrk35, "HLT_MET60_IsoTrk35/O");
-	outputTree->Branch("HLT_MET75_IsoTrk50", &HLT_MET75_IsoTrk50, "HLT_MET75_IsoTrk50/O");
-	outputTree->Branch("HLT_MET90_IsoTrk50", &HLT_MET90_IsoTrk50, "HLT_MET90_IsoTrk50/O");
-	outputTree->Branch("HLT_MET200", &HLT_MET200, "HLT_MET200/O");
-	outputTree->Branch("HLT_MET250", &HLT_MET250, "HLT_MET250/O");
-	outputTree->Branch("HLT_MET300", &HLT_MET300, "HLT_MET300/O");
-	outputTree->Branch("HLT_MET600", &HLT_MET600, "HLT_MET600/O");
-	outputTree->Branch("HLT_MET700", &HLT_MET700, "HLT_MET700/O");
+	outputTree->Branch("HLT_PFMET110_PFMHT110_IDTight", &HLT_PFMET110_PFMHT110_IDTight, "HLT_PFMET110_PFMHT110_IDTight/O");
+	outputTree->Branch("HLT_PFMET120_PFMHT120_IDTight", &HLT_PFMET120_PFMHT120_IDTight, "HLT_PFMET120_PFMHT120_IDTight/O");
+	outputTree->Branch("HLT_PFMET130_PFMHT130_IDTight", &HLT_PFMET130_PFMHT130_IDTight, "HLT_PFMET130_PFMHT130_IDTight/O");
+	outputTree->Branch("HLT_PFMET140_PFMHT140_IDTight", &HLT_PFMET140_PFMHT140_IDTight, "HLT_PFMET140_PFMHT140_IDTight/O");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -1113,16 +1096,10 @@ void METScanningNtupleMakerMINIAOD::InitandClearStuff(){
 	HLT_Ele32_WPTight_Gsf= false;
 	HLT_IsoMu24= false;
 	HLT_IsoMu27= false;
-        HLT_MET105_IsoTrk50= false;
-        HLT_MET120_IsoTrk50= false;
-        HLT_MET60_IsoTrk35= false;
-        HLT_MET75_IsoTrk50= false;
-        HLT_MET90_IsoTrk50= false;
-        HLT_MET200= false;
-        HLT_MET250= false;
-        HLT_MET300= false;
-        HLT_MET600= false;
-        HLT_MET700= false;
+        HLT_PFMET110_PFMHT110_IDTight= false;
+        HLT_PFMET120_PFMHT120_IDTight= false;
+        HLT_PFMET130_PFMHT130_IDTight= false;
+        HLT_PFMET140_PFMHT140_IDTight= false;
 
 	_jetEta.clear();
 	_jetPhi.clear();
