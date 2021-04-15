@@ -37,6 +37,10 @@
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenRunInfoProduct.h"
 
 #include "TH1F.h"
 #include "TH2F.h"
@@ -133,7 +137,7 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		edm::EDGetTokenT<pat::ElectronCollection> electronToken_;
 		edm::EDGetTokenT<pat::MuonCollection> muonToken_;
 		edm::EDGetTokenT<edm::TriggerResults> trgresultsToken_;
-
+                edm::EDGetTokenT<GenEventInfoProduct> genInfoToken_;
 
 		//  edm::Service<TFileService> fs;
 
@@ -142,6 +146,7 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		TH1F *h_PFMet, *h_PuppiMet, *h_nvtx, *h_leadjetpt;
 		TH1F *h_PFMet_num[N_METFilters], *h_PuppiMet_num[N_METFilters], *h_nvtx_num[N_METFilters], *h_leadjetpt_num[N_METFilters];
 		TH2F *h_jet200etavsphi_fail[N_METFilters];
+                TH1F *h_tot_gen_weights;
 		//The output TTree
 		TTree* outputTree;
 
@@ -151,6 +156,10 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		unsigned long _runNb;
 		unsigned long _lumiBlock;
 		unsigned long _bx;
+
+                //Generator weights
+                bool is_MC_;
+                double _genWeight;
 
 		//Nb of primary vertices
 		int _n_PV;
@@ -209,14 +218,14 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		vector <int>  gsf_VID_cutBasedElectronID_Fall17_94X_V2_veto;
 
 		//PF candidates
-		vector <double> _PFcand_pt;
-		vector <double> _PFcand_eta;
-		vector <double> _PFcand_phi;
-		vector <int> _PFcand_pdgId;
-		vector <int> _PFcand_fromPV;
-		vector <double> _PFcand_M;
-		vector <double> _PFcand_E;
-		vector<int> _PFcand_charge;
+		//vector <double> _PFcand_pt;
+		//vector <double> _PFcand_eta;
+		//vector <double> _PFcand_phi;
+		//vector <int> _PFcand_pdgId;
+		//vector <int> _PFcand_fromPV;
+		//vector <double> _PFcand_M;
+		//vector <double> _PFcand_E;
+		//vector<int> _PFcand_charge;
 		//MET
 		double _met;
 		double _met_phi;
@@ -317,8 +326,17 @@ class METScanningNtupleMakerMINIAOD : public edm::one::EDAnalyzer<edm::one::Shar
 		bool HLT_IsoMu24;
 		bool HLT_IsoMu27;
 
-
-
+                //MET Trigger
+                bool HLT_MET105_IsoTrk50;
+                bool HLT_MET120_IsoTrk50;
+                bool HLT_MET60_IsoTrk35;
+                bool HLT_MET75_IsoTrk50;
+                bool HLT_MET90_IsoTrk50;
+                bool HLT_MET200;
+                bool HLT_MET250;
+                bool HLT_MET300;
+                bool HLT_MET600;
+                bool HLT_MET700;
 };
 
 
@@ -351,10 +369,13 @@ METScanningNtupleMakerMINIAOD::METScanningNtupleMakerMINIAOD(const edm::Paramete
 		puppimetToken_(consumes<std::vector<pat::MET> > (iConfig.getParameter<edm::InputTag>("PuppiMet"))),
 		electronToken_(consumes<pat::ElectronCollection> (iConfig.getParameter<edm::InputTag>("electronCollection"))),
 		muonToken_(consumes<pat::MuonCollection> (iConfig.getParameter<edm::InputTag>("muonCollection"))),
-		trgresultsToken_(consumes<TriggerResults>(iConfig.getParameter<edm::InputTag>("Triggers")))
+		trgresultsToken_(consumes<TriggerResults>(iConfig.getParameter<edm::InputTag>("Triggers"))),
+                genInfoToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("GenInf"))),
+                is_MC_(iConfig.getParameter<bool> ("is_MC"))
 {
 	//now do what ever initialization is needed
 	edm::Service<TFileService> fs; 
+        h_tot_gen_weights = fs->make<TH1F>("h_tot_gen_weights","Total generator weights", 200000, -1000.0, 1000.0);
 	h_nvtx  = fs->make<TH1F>("h_nvtx" , "Number of reco vertices (MET>200);N_{vtx};Events"  ,    100, 0., 100.);
 	h_PFMet  = fs->make<TH1F>("h_PFMet" , "Type 1 PFMET (GeV);Type 1 PFMET (GeV);Events"  ,    1000, 0., 5000.);
 	h_PuppiMet  = fs->make<TH1F>("h_PuppiMet" , "PUPPI MET (GeV);PUPPI MET (GeV);Events"  ,    1000, 0., 5000.);
@@ -413,7 +434,19 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 	iEvent.getByToken(verticesToken_,theVertices) ;
 	_n_PV = theVertices->size();
 
-
+        //Gen-weights
+        if(is_MC_) 
+         {
+           edm::Handle<GenEventInfoProduct> genEvtInfo;
+           iEvent.getByToken(genInfoToken_, genEvtInfo);
+           _genWeight=genEvtInfo->weight();
+           h_tot_gen_weights->Fill(genEvtInfo->weight());
+         }
+        else 
+         {
+           _genWeight = 1.0;
+           h_tot_gen_weights->Fill(_genWeight);
+         }
 	//MET filters are stored in TriggerResults::RECO or TriggerResults::PAT . Should take the latter if it exists
 	edm::Handle<TriggerResults> METFilterResults;
 	iEvent.getByToken(metfilterspatToken_, METFilterResults);
@@ -497,8 +530,18 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 				if(TrigPath.Contains("HLT_Photon200_v")) HLT_Photon200=true;
 				if(TrigPath.Contains("HLT_Ele32_WPTight_Gsf_v"))    HLT_Ele32_WPTight_Gsf=true;
 				if(TrigPath.Contains("HLT_IsoMu24_v")) HLT_IsoMu24=true;
-				if(TrigPath.Contains("HLT_IsoMu27_v"))  HLT_IsoMu27=true;
-
+				if(TrigPath.Contains("HLT_IsoMu27_v")) HLT_IsoMu27=true;
+                                //MET Related Triggers
+                                if(TrigPath.Contains("HLT_MET200_v")) HLT_MET200=true;
+                                if(TrigPath.Contains("HLT_MET250_v")) HLT_MET250=true;
+                                if(TrigPath.Contains("HLT_MET300_v")) HLT_MET300=true;
+                                if(TrigPath.Contains("HLT_MET600_v")) HLT_MET600=true;
+                                if(TrigPath.Contains("HLT_MET700_v")) HLT_MET700=true;
+                                if(TrigPath.Contains("HLT_MET60_IsoTrk35_Loose_v")) HLT_MET60_IsoTrk35=true;
+                                if(TrigPath.Contains("HLT_MET75_IsoTrk50_v")) HLT_MET75_IsoTrk50=true;
+                                if(TrigPath.Contains("HLT_MET90_IsoTrk50_v")) HLT_MET90_IsoTrk50=true;
+                                if(TrigPath.Contains("HLT_MET105_IsoTrk50_v")) HLT_MET105_IsoTrk50=true;
+                                if(TrigPath.Contains("HLT_MET120_IsoTrk50_v")) HLT_MET120_IsoTrk50=true;
 			}
 		}
 	}
@@ -660,7 +703,7 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 		if((&*jet)->pt() > 25. && fabs((&*jet)->eta()) > 3.0 && fabs((&*jet)->eta()) < 5.0) ht3To5 = ht3To5 + (&*jet)->pt();
 
 		if((&*jet)->pt() >leadjetpt) leadjetpt = (&*jet)->pt();
-		if((&*jet)->pt()<200) continue;
+		if((&*jet)->pt()<30.) continue;//Lowering down the pt threshold cut
 		_jetEta.push_back((&*jet)->eta());
 		_jetPhi.push_back((&*jet)->phi());
 		_jetPt.push_back((&*jet)->pt());
@@ -700,6 +743,7 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 	_puppimet_phi = puppimet->phi();
 
 	//PF candidates
+        /*
 	edm::Handle<pat::PackedCandidateCollection> pfcands;
 	iEvent.getByToken(pfcandsToken_ ,pfcands);
 	for(pat::PackedCandidateCollection::const_reverse_iterator p = pfcands->rbegin() ; p != pfcands->rend() ; p++ ) {
@@ -713,7 +757,7 @@ METScanningNtupleMakerMINIAOD::analyze(const edm::Event& iEvent, const edm::Even
 		_PFcand_M.push_back(p->mass());
 		_PFcand_E.push_back(p->energy());
 	}
-
+        */
 
 
 	//Filling trees and histos   
@@ -781,6 +825,7 @@ METScanningNtupleMakerMINIAOD::beginJob()
 	outputTree->Branch("_lumiBlock", &_lumiBlock, "_lumiBlock/l");
 	outputTree->Branch("_bx", &_bx, "_bx/l");
 	outputTree->Branch("_n_PV", &_n_PV, "_n_PV/I");
+        outputTree->Branch("_genWeight", &_genWeight, "_genWeight/D");
 
 	outputTree->Branch("Flag_goodVertices",&Flag_goodVertices,"Flag_goodVertices/O");
 	outputTree->Branch("Flag_globalTightHalo2016Filter",&Flag_globalTightHalo2016Filter,"Flag_globalTightHalo2016Filter/O");
@@ -819,14 +864,14 @@ METScanningNtupleMakerMINIAOD::beginJob()
 	outputTree->Branch("_jet_PHM",&_jet_PHM);
 	outputTree->Branch("_jet_NM",&_jet_NM);
 
-	outputTree->Branch("_PFcand_pt",&_PFcand_pt);
-	outputTree->Branch("_PFcand_eta",&_PFcand_eta);
-	outputTree->Branch("_PFcand_phi",&_PFcand_phi);
-	outputTree->Branch("_PFcand_pdgId",&_PFcand_pdgId);
-	outputTree->Branch("_PFcand_fromPV",&_PFcand_fromPV);
-	outputTree->Branch("_PFcand_M", &_PFcand_M);
-	outputTree->Branch("_PFcand_E", &_PFcand_E);
-	outputTree->Branch("_PFcand_charge", &_PFcand_charge);
+	//outputTree->Branch("_PFcand_pt",&_PFcand_pt);
+	//outputTree->Branch("_PFcand_eta",&_PFcand_eta);
+	//outputTree->Branch("_PFcand_phi",&_PFcand_phi);
+        //outputTree->Branch("_PFcand_pdgId",&_PFcand_pdgId);
+	//outputTree->Branch("_PFcand_fromPV",&_PFcand_fromPV);
+	//outputTree->Branch("_PFcand_M", &_PFcand_M);
+	//outputTree->Branch("_PFcand_E", &_PFcand_E);
+	//outputTree->Branch("_PFcand_charge", &_PFcand_charge);
 
 	outputTree->Branch("_met", &_met, "_met/D");
 	outputTree->Branch("_met_phi", &_met_phi, "_met_phi/D");
@@ -933,7 +978,16 @@ METScanningNtupleMakerMINIAOD::beginJob()
 	outputTree->Branch("HLT_IsoMu24", &HLT_IsoMu24, "HLT_IsoMu24/O");
 	outputTree->Branch("HLT_IsoMu27", &HLT_IsoMu27, "HLT_IsoMu27/O");
 
-
+        outputTree->Branch("HLT_MET105_IsoTrk50", &HLT_MET105_IsoTrk50, "HLT_MET105_IsoTrk50/O");
+	outputTree->Branch("HLT_MET120_IsoTrk50", &HLT_MET120_IsoTrk50, "HLT_MET120_IsoTrk50/O");
+	outputTree->Branch("HLT_MET60_IsoTrk35", &HLT_MET60_IsoTrk35, "HLT_MET60_IsoTrk35/O");
+	outputTree->Branch("HLT_MET75_IsoTrk50", &HLT_MET75_IsoTrk50, "HLT_MET75_IsoTrk50/O");
+	outputTree->Branch("HLT_MET90_IsoTrk50", &HLT_MET90_IsoTrk50, "HLT_MET90_IsoTrk50/O");
+	outputTree->Branch("HLT_MET200", &HLT_MET200, "HLT_MET200/O");
+	outputTree->Branch("HLT_MET250", &HLT_MET250, "HLT_MET250/O");
+	outputTree->Branch("HLT_MET300", &HLT_MET300, "HLT_MET300/O");
+	outputTree->Branch("HLT_MET600", &HLT_MET600, "HLT_MET600/O");
+	outputTree->Branch("HLT_MET700", &HLT_MET700, "HLT_MET700/O");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -1059,6 +1113,16 @@ void METScanningNtupleMakerMINIAOD::InitandClearStuff(){
 	HLT_Ele32_WPTight_Gsf= false;
 	HLT_IsoMu24= false;
 	HLT_IsoMu27= false;
+        HLT_MET105_IsoTrk50= false;
+        HLT_MET120_IsoTrk50= false;
+        HLT_MET60_IsoTrk35= false;
+        HLT_MET75_IsoTrk50= false;
+        HLT_MET90_IsoTrk50= false;
+        HLT_MET200= false;
+        HLT_MET250= false;
+        HLT_MET300= false;
+        HLT_MET600= false;
+        HLT_MET700= false;
 
 	_jetEta.clear();
 	_jetPhi.clear();
@@ -1074,14 +1138,14 @@ void METScanningNtupleMakerMINIAOD::InitandClearStuff(){
 	_jet_PHM.clear();
 	_jet_NM.clear();
 	_jetEnergy.clear();
-	_PFcand_pt.clear();
-	_PFcand_eta.clear();
-	_PFcand_phi.clear();
-	_PFcand_pdgId.clear();
-	_PFcand_fromPV.clear();
-	_PFcand_M.clear();
-	_PFcand_E.clear();
-	_PFcand_charge.clear();
+	//_PFcand_pt.clear();
+	//_PFcand_eta.clear();
+	//_PFcand_phi.clear();
+	//_PFcand_pdgId.clear();
+	//_PFcand_fromPV.clear();
+	//_PFcand_M.clear();
+	//_PFcand_E.clear();
+	//_PFcand_charge.clear();
 
 	_elePt.clear();
 	_eleEta.clear();
