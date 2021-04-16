@@ -5,22 +5,22 @@ isMC=False
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
 #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer19UL17MiniAOD/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v6-v2/100000/0483790D-4921-9446-8162-B790BA44351E.root'
-#'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17MiniAODv2/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/PU2017_12Apr2018_94X_mc2017_realistic_v14-v2/30000/0055C65C-E558-E811-AB0E-008CFA582BF4.root'
-'root://cms-xrd-global.cern.ch//store/data/Run2017B/JetHT/MINIAOD/31Mar2018-v1/00000/0205C4D3-463A-E811-86BD-0CC47A4C8E2A.root'
+'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17MiniAODv2/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/PU2017_12Apr2018_94X_mc2017_realistic_v14-v2/30000/0055C65C-E558-E811-AB0E-008CFA582BF4.root'
+#'root://cms-xrd-global.cern.ch//store/data/Run2017B/JetHT/MINIAOD/31Mar2018-v1/00000/0205C4D3-463A-E811-86BD-0CC47A4C8E2A.root'
         )
                             )
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string("output.root") )
 
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-#process.GlobalTag.globaltag="94X_mc2017_realistic_v14" #MC-EOY-2017
-process.GlobalTag.globaltag="94X_dataRun2_ReReco_EOY17_v6" #DATA-EOY-2017
+#process.GlobalTag.globaltag="102X_mc2017_realistic_v8" #MC-EOY-2017
+process.GlobalTag.globaltag="102X_dataRun2_v13" #DATA-EOY-2017
 
 process.load("Configuration.StandardSequences.GeometryDB_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
@@ -162,12 +162,12 @@ process.BadPFMuonFilterUpdateDz=BadPFMuonFilter.clone(
 #process.ApplyPatAlgos  = cms.Path(process.patAlgosToolsTask)
 
 
-#import FWCore.PythonUtilities.LumiList as LumiList
-#import FWCore.ParameterSet.Types as CfgTypes
-#process.source.lumisToProcess = CfgTypes.untracked(CfgTypes.VLuminosityBlockRange())
-#JSONfile = 'Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt'
-#myLumis = LumiList.LumiList(filename = JSONfile).getCMSSWString().split(',')
-#process.source.lumisToProcess.extend(myLumis)
+import FWCore.PythonUtilities.LumiList as LumiList
+import FWCore.ParameterSet.Types as CfgTypes
+process.source.lumisToProcess = CfgTypes.untracked(CfgTypes.VLuminosityBlockRange())
+JSONfile = 'Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt'
+myLumis = LumiList.LumiList(filename = JSONfile).getCMSSWString().split(',')
+process.source.lumisToProcess.extend(myLumis)
 
 from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
 setupEgammaPostRecoSeq(process,era='2017-Nov17ReReco')
